@@ -864,12 +864,12 @@ function retryFetchData() {
   fetchData();
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 if (!isLocal) {
   const rUrl = document.getElementById('render-url');
   if (rUrl) rUrl.value = window.location.origin;
   selectSource('render');
+  startDashboard(); // Automatically start the dashboard immediately on Vercel
 } else {
   selectSource('demo');
 }
