@@ -200,9 +200,9 @@
       </div>
       <div class="src-card" id="src-render" onclick="selectSource('render')">
         <div class="src-icon">☁️</div>
-        <div class="src-name">Render / Railway</div>
-        <div class="src-desc">Deploy proxy online, use from any device.</div>
-        <span class="src-badge badge-free">Free Hosting</span>
+        <div class="src-name">Vercel / Cloud</div>
+        <div class="src-desc">Deploy proxy and frontend together on Vercel.</div>
+        <span class="src-badge badge-free">Zero Config</span>
       </div>
       <div class="src-card" id="src-demo" onclick="selectSource('demo')">
         <div class="src-icon">🤖</div>
@@ -223,11 +223,11 @@
     </div>
 
     <div id="steps-render" class="src-steps" style="display:none">
-      <div><span class="step-num">Step 1:</span> Push <code>app.py</code> to a GitHub repo</div>
-      <div><span class="step-num">Step 2:</span> Deploy to <code>render.com</code> (free tier) or <code>railway.app</code></div>
-      <div><span class="step-num">Step 3:</span> Add env var <code>UPSTOX_ACCESS_TOKEN</code> in the platform dashboard</div>
-      <div><span class="step-num">Step 4:</span> Enter your deployed URL below (e.g. <code>https://my-nifty.onrender.com</code>)</div>
-      <input type="text" id="render-url" placeholder="https://your-proxy.onrender.com" />
+      <div><span class="step-num">Step 1:</span> Push your repository to GitHub</div>
+      <div><span class="step-num">Step 2:</span> Import project into Vercel</div>
+      <div><span class="step-num">Step 3:</span> Set environment variable <code>UPSTOX_ACCESS_TOKEN</code> in the Vercel dashboard</div>
+      <div><span class="step-num">Step 4:</span> Confirm/enter your deployed URL below (pre-filled automatically)</div>
+      <input type="text" id="render-url" placeholder="https://your-app.vercel.app" />
     </div>
 
     <div id="steps-demo" class="src-steps" style="display:none">
@@ -420,7 +420,7 @@ function startDashboard() {
 }
 
 function updateSourceIndicator() {
-  const labels = { local:'Upstox Proxy (localhost:5000)', render:'Upstox Cloud Proxy', demo:'Smart Demo Mode' };
+  const labels = { local:'Upstox Proxy (localhost:5000)', render:'Vercel / Cloud Proxy', demo:'Smart Demo Mode' };
   const colors = { local:'var(--g)', render:'var(--b)', demo:'var(--pu)' };
   document.getElementById('src-label').textContent = labels[DATA_SOURCE];
   document.getElementById('src-ind').querySelector('.src-dot').style.background = colors[DATA_SOURCE];
@@ -865,15 +865,13 @@ function retryFetchData() {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────
-const isRemote = window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-if (isRemote) {
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+if (!isLocal) {
+  const rUrl = document.getElementById('render-url');
+  if (rUrl) rUrl.value = window.location.origin;
   selectSource('render');
-  const renderUrlInput = document.getElementById('render-url');
-  if (renderUrlInput) {
-    renderUrlInput.value = window.location.origin;
-  }
 } else {
-  selectSource('demo'); // default highlight
+  selectSource('demo');
 }
 setInterval(()=>{
   document.getElementById('mkt-st').textContent=isOpen()?'● MARKET LIVE':'○ CLOSED';
