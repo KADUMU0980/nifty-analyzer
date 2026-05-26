@@ -34,7 +34,8 @@ CORS(app)
 @app.route('/')
 @app.route('/index.html')
 def serve_index():
-    return send_from_directory('.', 'index.html')
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return send_from_directory(base_dir, 'index.html')
 
 # ── Upstox config ─────────────────────────────────────────────────────
 # Set via environment variable (recommended) OR paste token directly here
