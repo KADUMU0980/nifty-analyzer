@@ -865,7 +865,16 @@ function retryFetchData() {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────
-selectSource('demo'); // default highlight
+const isRemote = window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+if (isRemote) {
+  selectSource('render');
+  const renderUrlInput = document.getElementById('render-url');
+  if (renderUrlInput) {
+    renderUrlInput.value = window.location.origin;
+  }
+} else {
+  selectSource('demo'); // default highlight
+}
 setInterval(()=>{
   document.getElementById('mkt-st').textContent=isOpen()?'● MARKET LIVE':'○ CLOSED';
   document.getElementById('mkt-st').style.color=isOpen()?'var(--g)':'var(--r)';
