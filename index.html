@@ -17,33 +17,26 @@
   body{background:var(--bg-primary);color:var(--txt);font-family:'Space Grotesk',sans-serif;font-size:13px;min-height:100vh;overflow-x:hidden}
   body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:0}
 
-  /* SETUP MODAL */
+  /* TOKEN MODAL */
   #setup-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center}
-  .modal-box{background:#161920;border:1px solid #2e3545;border-radius:12px;padding:28px;max-width:580px;width:90%}
+  .modal-box{background:#161920;border:1px solid #2e3545;border-radius:12px;padding:28px;max-width:480px;width:90%}
   .modal-title{font-size:18px;font-weight:600;margin-bottom:6px;color:var(--txt)}
-  .modal-sub{font-size:12px;color:var(--txt2);margin-bottom:20px}
-  .source-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
-  .src-card{background:#0f1117;border:2px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s;text-align:center}
-  .src-card:hover{border-color:var(--b);background:#131620}
-  .src-card.selected{border-color:var(--g);background:rgba(0,212,170,.06)}
-  .src-icon{font-size:22px;margin-bottom:8px}
-  .src-name{font-size:13px;font-weight:600;margin-bottom:4px}
-  .src-desc{font-size:10px;color:var(--txt2);line-height:1.5}
-  .src-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700;text-transform:uppercase;margin-top:6px}
-  .badge-free{background:var(--gd);color:var(--g)}
-  .badge-local{background:var(--ad);color:var(--am)}
-  .badge-ai{background:rgba(167,139,250,.15);color:var(--pu)}
-  .src-steps{background:#0a0b0e;border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:12px;line-height:1.9;color:var(--txt2)}
-  .src-steps code{background:#1c2028;padding:2px 6px;border-radius:4px;color:var(--am);font-family:'JetBrains Mono',monospace;font-size:11px}
-  .src-steps .step-num{color:var(--g);font-weight:700}
-  input[type=text]{width:100%;background:#0a0b0e;border:1px solid var(--border);color:var(--txt);padding:8px 12px;border-radius:6px;font-size:12px;font-family:'JetBrains Mono',monospace;margin-top:6px}
-  input[type=text]:focus{outline:none;border-color:var(--b)}
+  .modal-sub{font-size:12px;color:var(--txt2);margin-bottom:20px;line-height:1.6}
+  .token-input-wrap{margin-bottom:16px}
+  .token-input-wrap label{font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px}
+  .token-input{width:100%;background:#0a0b0e;border:1px solid var(--border);color:var(--txt);padding:10px 14px;border-radius:8px;font-size:12px;font-family:'JetBrains Mono',monospace}
+  .token-input:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 2px rgba(0,212,170,.15)}
+  .token-input::placeholder{color:var(--txt3)}
+  .token-help{background:#0a0b0e;border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:12px;line-height:1.9;color:var(--txt2)}
+  .token-help code{background:#1c2028;padding:2px 6px;border-radius:4px;color:var(--am);font-family:'JetBrains Mono',monospace;font-size:11px}
+  .token-help .step-num{color:var(--g);font-weight:700}
+  .token-saved{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--g);margin-bottom:10px}
   .modal-actions{display:flex;gap:10px;justify-content:flex-end}
   .btn{padding:8px 18px;border-radius:6px;font-size:12px;font-weight:600;border:1px solid var(--border-b);cursor:pointer;background:var(--bg-card);color:var(--txt);transition:all .15s;font-family:inherit}
   .btn:hover{background:var(--bg-hover)}
   .btn-go{background:var(--g);color:#000;border-color:var(--g)}
   .btn-go:hover{opacity:.85;color:#000}
-  .btn-demo{background:transparent;border-color:var(--border);color:var(--txt2)}
+  .token-warn{font-size:10px;color:var(--am);margin-top:8px;line-height:1.5}
 
   /* HEADER */
   .header{background:var(--bg-secondary);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
@@ -185,58 +178,29 @@
 </head>
 <body>
 
-<!-- SETUP MODAL -->
+<!-- TOKEN INPUT MODAL -->
 <div id="setup-modal">
   <div class="modal-box">
-    <div class="modal-title">🎯 Choose Your Data Source</div>
-    <div class="modal-sub">NSE blocks direct browser requests. Pick how you want to get real option chain data.</div>
+    <div class="modal-title">🔑 Enter Upstox Access Token</div>
+    <div class="modal-sub">Your token is needed to fetch live Nifty option chain data from Upstox. It stays in your browser only and is never stored on the server.</div>
 
-    <div class="source-cards">
-      <div class="src-card" id="src-local" onclick="selectSource('local')">
-        <div class="src-icon">🖥️</div>
-        <div class="src-name">Local Proxy</div>
-        <div class="src-desc">Run Python script on your PC. Best accuracy.</div>
-        <span class="src-badge badge-local">Recommended</span>
-      </div>
-      <div class="src-card" id="src-render" onclick="selectSource('render')">
-        <div class="src-icon">☁️</div>
-        <div class="src-name">Vercel / Cloud</div>
-        <div class="src-desc">Deploy proxy and frontend together on Vercel.</div>
-        <span class="src-badge badge-free">Zero Config</span>
-      </div>
-      <div class="src-card" id="src-demo" onclick="selectSource('demo')">
-        <div class="src-icon">🤖</div>
-        <div class="src-name">Smart Demo</div>
-        <div class="src-desc">AI-generated realistic option chain. Full UI without setup.</div>
-        <span class="src-badge badge-ai">No Setup</span>
-      </div>
+    <div id="saved-token-msg" style="display:none" class="token-saved">✅ Token loaded from previous session</div>
+
+    <div class="token-input-wrap">
+      <label>Access Token</label>
+      <input type="text" id="token-input" class="token-input" placeholder="Paste your Upstox access token here..." />
     </div>
 
-    <div id="steps-local" class="src-steps" style="display:none">
-      <div><span class="step-num">Step 1:</span> Download <code>app.py</code> (given with this HTML)</div>
-      <div><span class="step-num">Step 2:</span> Install: <code>pip install flask flask-cors requests</code></div>
-      <div><span class="step-num">Step 3:</span> Get your Upstox access token from <code>developer.upstox.com</code></div>
-      <div><span class="step-num">Step 4:</span> Set token — Mac/Linux: <code>export UPSTOX_ACCESS_TOKEN=your_token</code> &nbsp;|&nbsp; Windows: <code>set UPSTOX_ACCESS_TOKEN=your_token</code></div>
-      <div><span class="step-num">Step 5:</span> Run: <code>python app.py</code></div>
-      <div><span class="step-num">Step 6:</span> Click "Start Dashboard" below ✅</div>
-      <div style="margin-top:6px;color:var(--am)">⚡ Data refreshes every 60s via Upstox API — token renews daily from Upstox developer portal</div>
+    <div class="token-help">
+      <div><span class="step-num">Step 1:</span> Go to <code>developer.upstox.com</code></div>
+      <div><span class="step-num">Step 2:</span> Login with your Upstox credentials</div>
+      <div><span class="step-num">Step 3:</span> Copy your daily access token</div>
+      <div><span class="step-num">Step 4:</span> Paste it above and click "Start Dashboard"</div>
     </div>
 
-    <div id="steps-render" class="src-steps" style="display:none">
-      <div><span class="step-num">Step 1:</span> Push your repository to GitHub</div>
-      <div><span class="step-num">Step 2:</span> Import project into Vercel</div>
-      <div><span class="step-num">Step 3:</span> Set environment variable <code>UPSTOX_ACCESS_TOKEN</code> in the Vercel dashboard</div>
-      <div><span class="step-num">Step 4:</span> Confirm/enter your deployed URL below (pre-filled automatically)</div>
-      <input type="text" id="render-url" placeholder="https://your-app.vercel.app" />
-    </div>
+    <div class="token-warn">⚠️ Tokens expire daily at midnight IST. You'll need to enter a fresh token each day.</div>
 
-    <div id="steps-demo" class="src-steps" style="display:none">
-      <div>✅ No setup needed — click Start Dashboard</div>
-      <div style="margin-top:4px;color:var(--txt3)">Uses a realistic AI-generated Nifty option chain based on live market structure. All analysis, alerts, and signals work normally. Switch to Local Proxy when you're ready for live NSE data.</div>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn btn-demo" onclick="selectSource('demo');startDashboard()">Skip → Use Demo</button>
+    <div class="modal-actions" style="margin-top:16px">
       <button class="btn btn-go" onclick="startDashboard()">Start Dashboard →</button>
     </div>
   </div>
@@ -262,7 +226,7 @@
     <div style="font-size:10px;color:var(--txt3);font-family:'JetBrains Mono',monospace" id="last-upd">—</div>
     <button class="btn" style="font-size:11px" onclick="fetchData()">↻ Refresh</button>
     <button class="btn" style="font-size:11px;color:var(--am)" onclick="requestNotif()">🔔</button>
-    <button class="btn" style="font-size:11px;color:var(--txt2)" onclick="document.getElementById('setup-modal').style.display='flex'">⚙ Source</button>
+    <button class="btn" style="font-size:11px;color:var(--am)" onclick="showTokenModal()">🔑 Token</button>
   </div>
 </div>
 
@@ -392,27 +356,28 @@
 
 <script>
 // ── CONFIG ─────────────────────────────────────────────────────────────
-let DATA_SOURCE = 'demo';
-let PROXY_URL = 'http://localhost:5000';
-let optData = null, spotPrice = 24750;
+let UPSTOX_TOKEN = localStorage.getItem('upstox_token') || '';
+let PROXY_URL = '';
+let optData = null, spotPrice = 0;
 let arTimer = null, alertLog = [], prevA = {}, notifOn = false;
 
-// ── SOURCE SELECTION ───────────────────────────────────────────────────
-function selectSource(s) {
-  DATA_SOURCE = s;
-  document.querySelectorAll('.src-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('src-'+s)?.classList.add('selected');
-  document.querySelectorAll('[id^=steps-]').forEach(el => el.style.display='none');
-  const stepsEl = document.getElementById('steps-'+s);
-  if(stepsEl) stepsEl.style.display='block';
+// ── TOKEN MANAGEMENT ──────────────────────────────────────────────────
+function showTokenModal() {
+  const modal = document.getElementById('setup-modal');
+  const input = document.getElementById('token-input');
+  if(UPSTOX_TOKEN) input.value = UPSTOX_TOKEN;
+  modal.style.display = 'flex';
 }
 
 function startDashboard() {
-  if(DATA_SOURCE === 'render') {
-    const url = document.getElementById('render-url')?.value?.trim();
-    if(url) PROXY_URL = url.replace(/\/$/, '');
-    else { showToast('warn','⚠️','Enter your Render/Railway URL'); return; }
-  }
+  const input = document.getElementById('token-input');
+  const token = input.value.trim();
+  if(!token) { showToast('warn','⚠️','Please paste your Upstox access token'); return; }
+  UPSTOX_TOKEN = token;
+  localStorage.setItem('upstox_token', token);
+  // Determine API base URL
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  PROXY_URL = isLocal ? 'http://localhost:5000' : window.location.origin;
   document.getElementById('setup-modal').style.display = 'none';
   updateSourceIndicator();
   fetchData();
@@ -420,11 +385,12 @@ function startDashboard() {
 }
 
 function updateSourceIndicator() {
-  const labels = { local:'Upstox Proxy (localhost:5000)', render:'Vercel / Cloud Proxy', demo:'Smart Demo Mode' };
-  const colors = { local:'var(--g)', render:'var(--b)', demo:'var(--pu)' };
-  document.getElementById('src-label').textContent = labels[DATA_SOURCE];
-  document.getElementById('src-ind').querySelector('.src-dot').style.background = colors[DATA_SOURCE];
-  document.getElementById('st-src').textContent = 'Source: ' + labels[DATA_SOURCE];
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const label = isLocal ? 'Upstox via Local Proxy' : 'Upstox via Vercel';
+  const color = 'var(--g)';
+  document.getElementById('src-label').textContent = label;
+  document.getElementById('src-ind').querySelector('.src-dot').style.background = color;
+  document.getElementById('st-src').textContent = 'Source: ' + label;
 }
 
 // ── UTILS ──────────────────────────────────────────────────────────────
@@ -488,18 +454,18 @@ async function fetchData() {
   const lov = document.getElementById('lov');
   const spinner = lov.querySelector('.spinner');
   if (spinner) spinner.style.display = 'block';
-  document.getElementById('ltext').textContent = 'Connecting to data source...';
+  document.getElementById('ltext').textContent = 'Connecting to Upstox...';
   lov.style.display='flex';
   document.getElementById('last-upd').textContent='Fetching...';
-  if(DATA_SOURCE==='demo') { generateDemo(); return; }
+  if(!UPSTOX_TOKEN) { showTokenModal(); return; }
+  const reqHeaders = { 'X-Upstox-Token': UPSTOX_TOKEN };
   try {
-    const base = DATA_SOURCE==='local' ? 'http://localhost:5000' : PROXY_URL;
-    document.getElementById('ltext').textContent='Connecting to '+base+'...';
+    document.getElementById('ltext').textContent='Fetching live data from Upstox...';
 
     // Fetch option chain and VIX in parallel
     const [ocResp, vixResp] = await Promise.all([
-      fetch(base+'/api/option-chain', {signal:AbortSignal.timeout(12000)}),
-      fetch(base+'/api/vix', {signal:AbortSignal.timeout(8000)}).catch(()=>null)
+      fetch(PROXY_URL+'/api/option-chain', {headers: reqHeaders, signal:AbortSignal.timeout(15000)}),
+      fetch(PROXY_URL+'/api/vix', {headers: reqHeaders, signal:AbortSignal.timeout(10000)}).catch(()=>null)
     ]);
 
     if(!ocResp.ok) {
@@ -562,46 +528,8 @@ function processNSEData(data) {
   }
 }
 
-// ── DEMO DATA ─────────────────────────────────────────────────────────
-function generateDemo() {
-  document.getElementById('ltext').textContent='Generating smart demo data...';
-  const spot=spotPrice, atm=Math.round(spot/50)*50;
-  const vix=13.5+Math.random()*3.5, atmIV=vix*1.1;
-  const rows=[];
 
-  for(let i=-20;i<=20;i++){
-    const strike=atm+i*50, mon=(strike-spot)/spot;
-    const ceIV=atmIV+Math.abs(mon)*75+(i>0?-mon*12:mon*4);
-    const peIV=atmIV+Math.abs(mon)*75+(i<0?-mon*(-12):mon*4);
-    const base=1e6, dist=Math.abs(i);
-    let ceOI=base*Math.exp(-dist*0.14), peOI=base*Math.exp(-dist*0.14);
-    // OI walls
-    if(i===6)ceOI*=3.4; if(i===10)ceOI*=2.6; if(i===4)ceOI*=2.0;
-    if(i===-6)peOI*=3.2; if(i===-10)peOI*=2.5; if(i===-4)peOI*=2.1;
-    if(i===0){ceOI*=1.8;peOI*=1.9;}
-    const ceChg=ceOI*(Math.random()*.45-.1)*(i>0?1.3:.7);
-    const peChg=peOI*(Math.random()*.45-.1)*(i<0?1.3:.7);
-    rows.push({
-      strikePrice:strike,
-      CE:{openInterest:Math.round(ceOI),changeinOpenInterest:Math.round(ceChg),totalTradedVolume:Math.round(ceOI*.12),impliedVolatility:+ceIV.toFixed(1),lastPrice:+(Math.max(spot-strike,1)+Math.random()*30).toFixed(2),change:+(Math.random()*20-10).toFixed(2)},
-      PE:{openInterest:Math.round(peOI),changeinOpenInterest:Math.round(peChg),totalTradedVolume:Math.round(peOI*.12),impliedVolatility:+peIV.toFixed(1),lastPrice:+(Math.max(strike-spot,1)+Math.random()*30).toFixed(2),change:+(Math.random()*20-10).toFixed(2)}
-    });
-  }
 
-  optData=rows;
-  const move=(Math.random()*250-100), isUp=move>=0, pct=(move/spot*100);
-  spotPrice=Math.round((spot+move)*100)/100;
-  document.getElementById('nifty-price').textContent=spotPrice.toLocaleString('en-IN',{minimumFractionDigits:2});
-  document.getElementById('nifty-chg').textContent=(isUp?'+':'')+move.toFixed(2)+' ('+(isUp?'+':'')+pct.toFixed(2)+'%)';
-  document.getElementById('nifty-chg').style.color=isUp?'var(--g)':'var(--r)';
-  const vEl=document.getElementById('vix-v');
-  vEl.textContent=vix.toFixed(2);
-  vEl.style.color=vix>16?'var(--r)':vix>13?'var(--am)':'var(--g)';
-  document.getElementById('last-upd').textContent='Demo · '+nowT();
-
-  renderTable(); runAnalysis();
-  document.getElementById('lov').style.display='none';
-}
 
 // ── RENDER TABLE ──────────────────────────────────────────────────────
 function renderTable() {
@@ -870,19 +798,26 @@ function retryFetchData() {
   const lov = document.getElementById('lov');
   const spinner = lov.querySelector('.spinner');
   if (spinner) spinner.style.display = 'block';
-  document.getElementById('ltext').textContent = 'Connecting to data source...';
+  document.getElementById('ltext').textContent = 'Connecting to Upstox...';
   fetchData();
 }
 
+// ── INIT ──────────────────────────────────────────────────────────────
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-if (!isLocal) {
-  const rUrl = document.getElementById('render-url');
-  if (rUrl) rUrl.value = window.location.origin;
-  selectSource('render');
-  startDashboard(); // Automatically start the dashboard immediately on Vercel
-} else {
-  selectSource('demo');
+PROXY_URL = isLocal ? 'http://localhost:5000' : window.location.origin;
+
+// If token saved from a previous session, pre-fill and auto-start
+if(UPSTOX_TOKEN) {
+  document.getElementById('token-input').value = UPSTOX_TOKEN;
+  document.getElementById('saved-token-msg').style.display = 'flex';
+  // Auto-start with saved token
+  document.getElementById('setup-modal').style.display = 'none';
+  updateSourceIndicator();
+  fetchData();
+  setAR();
 }
+// Otherwise the modal stays visible for the user to enter their token
+
 setInterval(()=>{
   document.getElementById('mkt-st').textContent=isOpen()?'● MARKET LIVE':'○ CLOSED';
   document.getElementById('mkt-st').style.color=isOpen()?'var(--g)':'var(--r)';

@@ -1,27 +1,18 @@
 """
-Upstox Option Chain Local Proxy Server
+Upstox Option Chain Proxy Server
 =======================================
-Run this on your machine → it fetches Upstox data (bypassing CORS)
-and serves it to your dashboard at http://localhost:5000
+Proxies Upstox API requests (bypassing CORS) for the Nifty OI dashboard.
 
-SETUP (one time):
-  pip install flask flask-cors requests
+The access token can be provided in two ways:
+  1. Via the frontend — user pastes their token in the website popup,
+     which is sent as an X-Upstox-Token header on each request.
+  2. Via environment variable UPSTOX_ACCESS_TOKEN (fallback).
 
-CONFIGURE:
-  Set your Upstox daily access token:
-    Windows:  set UPSTOX_ACCESS_TOKEN=your_token_here
-    Mac/Linux: export UPSTOX_ACCESS_TOKEN=your_token_here
-  OR paste it directly into the UPSTOX_ACCESS_TOKEN variable below.
-
-  Get your token from: https://developer.upstox.com → login → access token
-
-RUN:
-  python app.py
-
-Then open index.html in your browser.
+Get your token from: https://developer.upstox.com → login → access token
+Tokens expire daily at midnight IST.
 """
 
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 import requests
 import os
@@ -38,16 +29,22 @@ def serve_index():
     return send_from_directory(base_dir, 'index.html')
 
 # ── Upstox config ─────────────────────────────────────────────────────
-# Set via environment variable (recommended) OR paste token directly here
-UPSTOX_ACCESS_TOKEN = os.environ.get('UPSTOX_ACCESS_TOKEN', "eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiI1UkNHVTMiLCJqdGkiOiI2YTE1MTBhNTM3NDhjODUzMDFhZmMyMGMiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6ZmFsc2UsImlhdCI6MTc3OTc2NTQxMywiaXNzIjoidWRhcGktZ2F0ZXdheS1zZXJ2aWNlIiwiZXhwIjoxNzc5ODMyODAwfQ.PmY6ZZUFI300sEv4PqTmdXBHhPEl6xav1tL5n6m5zhg")
+UPSTOX_BASE = 'https://api.upstox.com/v2'
+NIFTY_KEY   = 'NSE_INDEX|Nifty 50'
+VIX_KEY     = 'NSE_INDEX|India VIX'
 
-UPSTOX_BASE        = 'https://api.upstox.com/v2'
-NIFTY_KEY          = 'NSE_INDEX|Nifty 50'
-VIX_KEY            = 'NSE_INDEX|India VIX'
+def get_token():
+    """Get the Upstox access token from the request header or env var."""
+    # Priority: request header > environment variable
+    header_token = request.headers.get('X-Upstox-Token', '').strip()
+    if header_token:
+        return header_token
+    return os.environ.get('UPSTOX_ACCESS_TOKEN', '').strip()
 
-def upstox_headers():
+def upstox_headers(token=None):
+    t = token or get_token()
     return {
-        'Authorization': f'Bearer {UPSTOX_ACCESS_TOKEN}',
+        'Authorization': f'Bearer {t}',
         'Accept': 'application/json',
         'Content-Type': 'application/json'
     }
@@ -66,11 +63,11 @@ def get_cached(key, fetch_fn):
     return data
 
 # ── Helpers ───────────────────────────────────────────────────────────
-def get_nearest_expiry():
+def get_nearest_expiry(token):
     """Fetch nearest weekly/monthly expiry from Upstox"""
     try:
         url = f"{UPSTOX_BASE}/option/contract"
-        r = requests.get(url, headers=upstox_headers(),
+        r = requests.get(url, headers=upstox_headers(token),
                          params={'instrument_key': NIFTY_KEY}, timeout=10)
         if r.status_code == 200:
             data = r.json().get('data', [])
@@ -83,19 +80,19 @@ def get_nearest_expiry():
         print(f"Expiry fetch error: {e}")
     return None
 
-def get_spot_price():
+def get_spot_price(token):
     """Fetch Nifty 50 last price from Upstox quotes"""
     try:
         url = f"{UPSTOX_BASE}/market-quote/quotes"
-        r = requests.get(url, headers=upstox_headers(),
+        r = requests.get(url, headers=upstox_headers(token),
                          params={'instrument_key': NIFTY_KEY}, timeout=8)
         if r.status_code == 200:
             quotes = r.json().get('data', {})
             nifty  = quotes.get(NIFTY_KEY, {})
-            return nifty.get('last_price', 24750)
+            return nifty.get('last_price', 0)
     except Exception as e:
         print(f"Spot price fetch error: {e}")
-    return 24750
+    return 0
 
 def convert_to_nse_format(upstox_records, spot_price):
     """
@@ -151,16 +148,26 @@ def convert_to_nse_format(upstox_records, spot_price):
 # ── Option Chain endpoint ──────────────────────────────────────────────
 @app.route('/api/option-chain')
 def option_chain():
+    token = get_token()
+    if not token:
+        return jsonify({
+            "status": "error",
+            "message": "No access token provided",
+            "debug": {
+                "hint": "Please enter your Upstox access token in the popup. Get one from developer.upstox.com"
+            }
+        }), 401
+
     def fetch():
         try:
-            expiry = get_nearest_expiry()
+            expiry = get_nearest_expiry(token)
             if not expiry:
                 print("❌ Could not determine nearest expiry")
                 return None
 
             print(f"📅 Fetching option chain for expiry: {expiry}")
             url = f"{UPSTOX_BASE}/option/chain"
-            r   = requests.get(url, headers=upstox_headers(),
+            r   = requests.get(url, headers=upstox_headers(token),
                                 params={'instrument_key': NIFTY_KEY,
                                         'expiry_date':    expiry},
                                 timeout=15)
@@ -171,7 +178,7 @@ def option_chain():
             if r.status_code == 200:
                 result = r.json()
                 if result.get('status') == 'success':
-                    spot = get_spot_price()
+                    spot = get_spot_price(token)
                     return convert_to_nse_format(result.get('data', []), spot)
             print(f"Upstox error {r.status_code}: {r.text[:300]}")
         except Exception as e:
@@ -181,24 +188,25 @@ def option_chain():
     data = get_cached('option_chain', fetch)
     if data:
         return jsonify({"status": "ok", "source": "upstox_live", "data": data})
-    # Check if token looks like it might be the expired hardcoded one
-    is_env = os.environ.get('UPSTOX_ACCESS_TOKEN') is not None
     return jsonify({
         "status": "error",
-        "message": "Upstox fetch failed — check token / market hours",
+        "message": "Upstox fetch failed — token may be expired or market is closed",
         "debug": {
-            "token_source": "env_var" if is_env else "hardcoded_fallback (likely expired)",
-            "hint": "Upstox tokens expire daily at midnight. Get a fresh token from developer.upstox.com and set UPSTOX_ACCESS_TOKEN env var."
+            "hint": "Upstox tokens expire daily at midnight IST. Get a fresh token from developer.upstox.com"
         }
     }), 500
 
 # ── VIX + Nifty quote endpoint ─────────────────────────────────────────
 @app.route('/api/vix')
 def vix():
+    token = get_token()
+    if not token:
+        return jsonify({"status": "error", "message": "No token"}), 401
+
     def fetch():
         try:
             url = f"{UPSTOX_BASE}/market-quote/quotes"
-            r   = requests.get(url, headers=upstox_headers(),
+            r   = requests.get(url, headers=upstox_headers(token),
                                 params={'instrument_key': f"{NIFTY_KEY},{VIX_KEY}"},
                                 timeout=10)
             if r.status_code == 200:
@@ -235,23 +243,17 @@ def vix():
 # ── Health check ───────────────────────────────────────────────────────
 @app.route('/health')
 def health():
-    token_ok = UPSTOX_ACCESS_TOKEN != 'YOUR_UPSTOX_ACCESS_TOKEN_HERE'
     return jsonify({
         "status":  "running",
-        "proxy":   "Upstox Option Chain Proxy v2.0",
-        "token":   "configured" if token_ok else "MISSING — set UPSTOX_ACCESS_TOKEN"
+        "proxy":   "Upstox Option Chain Proxy v3.0",
+        "note":    "Token is now provided by the user via the website popup"
     })
 
 if __name__ == '__main__':
-    print("\n🚀 Upstox Option Chain Proxy Server")
+    print("\n🚀 Upstox Option Chain Proxy Server v3.0")
     print("=" * 45)
-    if UPSTOX_ACCESS_TOKEN == 'YOUR_UPSTOX_ACCESS_TOKEN_HERE':
-        print("⚠️  WARNING: Access token not set!")
-        print("   Mac/Linux: export UPSTOX_ACCESS_TOKEN=your_token")
-        print("   Windows:   set UPSTOX_ACCESS_TOKEN=your_token")
-        print("   Get token: https://developer.upstox.com")
-    else:
-        print("✅ Upstox access token loaded")
+    print("✅ Token is now entered by the user on the website")
+    print("   (or set UPSTOX_ACCESS_TOKEN env var as fallback)")
     print("\n✅ Server starting at http://localhost:5000")
     print("📊 Open index.html in your browser")
     print("⏹  Press Ctrl+C to stop\n")
