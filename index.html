@@ -502,10 +502,18 @@ async function fetchData() {
       fetch(base+'/api/vix', {signal:AbortSignal.timeout(8000)}).catch(()=>null)
     ]);
 
-    if(!ocResp.ok) throw new Error('Proxy returned '+ocResp.status);
+    if(!ocResp.ok) {
+      let errMsg = 'Proxy returned '+ocResp.status;
+      try { const ej = await ocResp.json(); if(ej.debug?.hint) errMsg += ' — ' + ej.debug.hint; } catch(_){}
+      throw new Error(errMsg);
+    }
     const ocJson = await ocResp.json();
 
-    if(ocJson.status!=='ok') throw new Error('Proxy error: '+ocJson.message);
+    if(ocJson.status!=='ok') {
+      const err = new Error('Proxy error: '+(ocJson.message||'unknown'));
+      if(ocJson.debug?.hint) err.debugInfo = ocJson.debug.hint;
+      throw err;
+    }
 
     // VIX data
     if(vixResp && vixResp.ok) {
@@ -532,8 +540,10 @@ async function fetchData() {
 
   } catch(e) {
     console.error(e);
-    showToast('danger','❌ Proxy Error', e.message+'. Make sure the proxy server is running and UPSTOX_ACCESS_TOKEN is set.');
-    showErrorOverlay(e.message);
+    let hint = '';
+    if(e.debugInfo) hint = '\n\nHint: ' + e.debugInfo;
+    showToast('danger','❌ Proxy Error', e.message + hint + '. Make sure the proxy server is running and UPSTOX_ACCESS_TOKEN is set.');
+    showErrorOverlay(e.message + hint);
   }
 }
 

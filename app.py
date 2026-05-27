@@ -181,7 +181,16 @@ def option_chain():
     data = get_cached('option_chain', fetch)
     if data:
         return jsonify({"status": "ok", "source": "upstox_live", "data": data})
-    return jsonify({"status": "error", "message": "Upstox fetch failed — check token / market hours"}), 500
+    # Check if token looks like it might be the expired hardcoded one
+    is_env = os.environ.get('UPSTOX_ACCESS_TOKEN') is not None
+    return jsonify({
+        "status": "error",
+        "message": "Upstox fetch failed — check token / market hours",
+        "debug": {
+            "token_source": "env_var" if is_env else "hardcoded_fallback (likely expired)",
+            "hint": "Upstox tokens expire daily at midnight. Get a fresh token from developer.upstox.com and set UPSTOX_ACCESS_TOKEN env var."
+        }
+    }), 500
 
 # ── VIX + Nifty quote endpoint ─────────────────────────────────────────
 @app.route('/api/vix')
